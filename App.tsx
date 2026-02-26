@@ -19,9 +19,11 @@ import HRModule from './modules/HRModule';
 import AdminPanel from './components/AdminPanel';
 import TaxAssistant from './components/TaxAssistant';
 import TaxHistory from './components/TaxHistory';
+import Login from './components/Login';
 import { calculatePAYE } from './services/taxEngine';
 
 const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<{ email: string; role: UserRole } | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [activeTab, setActiveTab] = useState<string>('calculator');
   const [taxConfig, setTaxConfig] = useState<TaxConfig>(INITIAL_TAX_CONFIG);
@@ -64,41 +66,21 @@ const App: React.FC = () => {
     setActiveTab('calculator');
   };
 
-  if (!role) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
-        <div className="max-w-4xl w-full">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center p-3 bg-emerald-600 rounded-2xl mb-4">
-              <CalcIcon className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-4xl font-extrabold text-white mb-2">NaijaTax <span className="text-emerald-400">2026</span></h1>
-            <p className="text-slate-400">Select your access portal to begin</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <RoleCard 
-              icon={<UserCircle className="w-8 h-8" />}
-              title="Employee"
-              desc="Calculate your personal PAYE, explore rent reliefs, and use the AI tax advisor."
-              onClick={() => { setRole('employee'); setActiveTab('calculator'); }}
-            />
-            <RoleCard 
-              icon={<Users className="w-8 h-8" />}
-              title="HR / Payroll"
-              desc="Bulk calculate taxes for employees via CSV and export payroll-ready data."
-              onClick={() => { setRole('hr'); setActiveTab('bulk'); }}
-            />
-            <RoleCard 
-              icon={<ShieldCheck className="w-8 h-8" />}
-              title="Admin"
-              desc="Manage tax bands, relief caps, and legal framework parameters."
-              onClick={() => { setRole('admin'); setActiveTab('admin'); }}
-            />
-          </div>
-        </div>
-      </div>
-    );
+  const handleLogin = (email: string, role: UserRole) => {
+    setCurrentUser({ email, role });
+    setRole(role);
+    if (role === 'admin') setActiveTab('admin');
+    else if (role === 'hr') setActiveTab('bulk');
+    else setActiveTab('calculator');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setRole(null);
+  };
+
+  if (!currentUser) {
+    return <Login onLogin={handleLogin} />;
   }
 
   return (
@@ -106,7 +88,7 @@ const App: React.FC = () => {
       {/* Dynamic Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setRole(null)}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('calculator')}>
             <div className="bg-emerald-600 p-1.5 rounded-lg">
               <CalcIcon className="w-5 h-5 text-white" />
             </div>
@@ -114,6 +96,10 @@ const App: React.FC = () => {
           </div>
 
           <nav className="hidden md:flex items-center space-x-1">
+            <div className="flex items-center space-x-2 mr-4 px-3 py-1 bg-slate-100 rounded-full">
+              <UserCircle className="w-4 h-4 text-slate-500" />
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{currentUser.email}</span>
+            </div>
             {role === 'employee' && (
               <>
                 <NavButton active={activeTab === 'calculator'} onClick={() => setActiveTab('calculator')} icon={<PieChart className="w-4 h-4" />} label="Calculator" />
@@ -134,7 +120,7 @@ const App: React.FC = () => {
               </>
             )}
             <div className="h-6 w-px bg-slate-200 mx-2" />
-            <button onClick={() => setRole(null)} className="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all font-medium">
+            <button onClick={handleLogout} className="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all font-medium">
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
             </button>
@@ -177,23 +163,6 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-const RoleCard = ({ icon, title, desc, onClick }: any) => (
-  <button 
-    onClick={onClick}
-    className="bg-slate-800 p-8 rounded-3xl border border-slate-700 text-left hover:border-emerald-500 hover:bg-slate-800/80 transition-all group shadow-xl"
-  >
-    <div className="bg-slate-700 w-14 h-14 rounded-2xl flex items-center justify-center text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-all mb-6">
-      {icon}
-    </div>
-    <h3 className="text-xl font-bold text-white mb-3">{title} Portal</h3>
-    <p className="text-slate-400 text-sm leading-relaxed mb-6">{desc}</p>
-    <div className="flex items-center text-emerald-400 font-bold text-sm">
-      Enter Dashboard 
-      <CalcIcon className="w-4 h-4 ml-2" />
-    </div>
-  </button>
-);
 
 const NavButton = ({ active, onClick, icon, label }: any) => (
   <button 
