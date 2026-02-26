@@ -1,46 +1,84 @@
-import React, { useState } from 'react';
-import { Lock, Mail, ShieldCheck, Users, UserCircle, Calculator, AlertCircle, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lock, Mail, ShieldCheck, Users, UserCircle, Calculator, AlertCircle, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 import { UserRole } from '../types';
 
 interface Props {
   onLogin: (email: string, role: UserRole) => void;
 }
 
+interface UserData {
+  email: string;
+  password: string;
+  role: UserRole;
+}
+
 const Login: React.FC<Props> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('individual');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const getUsers = (): UserData[] => {
+    const users = localStorage.getItem('naijatax_users');
+    return users ? JSON.parse(users) : [];
+  };
+
+  const saveUser = (user: UserData) => {
+    const users = getUsers();
+    users.push(user);
+    localStorage.setItem('naijatax_users', JSON.stringify(users));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     if (!email || !password) {
       setError('Please enter both email and password.');
       return;
     }
 
+    if (isSignUp) {
+      if (selectedRole === 'admin') {
+        setError('Admin accounts cannot be created manually.');
+        return;
+      }
+
+      const users = getUsers();
+      if (users.find(u => u.email === email)) {
+        setError('An account with this email already exists.');
+        return;
+      }
+
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters.');
+        return;
+      }
+
+      saveUser({ email, password, role: selectedRole });
+      setSuccess('Account created successfully! You can now sign in.');
+      setIsSignUp(false);
+      return;
+    }
+
+    // Login logic
     if (selectedRole === 'admin') {
       if (email === 'geopaju@gmail.com' && password === 'Amahian@2026') {
         onLogin(email, 'admin');
       } else {
         setError('Invalid admin credentials.');
       }
-    } else if (selectedRole === 'hr') {
-      // For demo purposes, allow specific HR credentials or any for now
-      // but let's make it feel "real"
-      if (password.length >= 6) {
-        onLogin(email, 'hr');
-      } else {
-        setError('Password must be at least 6 characters.');
-      }
     } else {
-      // Employee login
-      if (password.length >= 4) {
-        onLogin(email, 'employee');
+      const users = getUsers();
+      const user = users.find(u => u.email === email && u.password === password && u.role === selectedRole);
+      
+      if (user) {
+        onLogin(email, selectedRole);
       } else {
-        setError('Password must be at least 4 characters.');
+        setError(`Invalid ${selectedRole} credentials. Make sure you selected the correct portal.`);
       }
     }
   };
@@ -57,20 +95,35 @@ const Login: React.FC<Props> = ({ onLogin }) => {
         </div>
 
         <div className="bg-slate-800 rounded-[2.5rem] p-8 border border-slate-700 shadow-2xl">
+          <div className="flex mb-8 bg-slate-900/50 p-1 rounded-2xl border border-slate-700">
+            <button 
+              onClick={() => { setIsSignUp(false); setError(''); setSuccess(''); }}
+              className={`flex-1 flex items-center justify-center py-2.5 rounded-xl font-black text-xs transition-all ${!isSignUp ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <LogIn className="w-3.5 h-3.5 mr-2" /> Sign In
+            </button>
+            <button 
+              onClick={() => { setIsSignUp(true); setError(''); setSuccess(''); }}
+              className={`flex-1 flex items-center justify-center py-2.5 rounded-xl font-black text-xs transition-all ${isSignUp ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <UserPlus className="w-3.5 h-3.5 mr-2" /> Create Account
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Role Selection */}
             <div className="grid grid-cols-3 gap-3">
               <RoleButton 
-                active={selectedRole === 'employee'} 
-                onClick={() => setSelectedRole('employee')}
+                active={selectedRole === 'individual'} 
+                onClick={() => setSelectedRole('individual')}
                 icon={<UserCircle className="w-4 h-4" />}
-                label="Staff"
+                label="Individual"
               />
               <RoleButton 
-                active={selectedRole === 'hr'} 
-                onClick={() => setSelectedRole('hr')}
+                active={selectedRole === 'organisation'} 
+                onClick={() => setSelectedRole('organisation')}
                 icon={<Users className="w-4 h-4" />}
-                label="HR"
+                label="Organisation"
               />
               <RoleButton 
                 active={selectedRole === 'admin'} 
@@ -92,7 +145,7 @@ const Login: React.FC<Props> = ({ onLogin }) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-12 pr-5 py-4 bg-slate-900/50 border border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none font-bold text-white transition-all placeholder:text-slate-600"
-                    placeholder="name@company.com"
+                    placeholder="name@example.com"
                   />
                 </div>
               </div>
@@ -121,20 +174,29 @@ const Login: React.FC<Props> = ({ onLogin }) => {
               </div>
             )}
 
+            {success && (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl flex items-center text-emerald-400 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                <ShieldCheck className="w-4 h-4 mr-2 shrink-0" />
+                {success}
+              </div>
+            )}
+
             <button 
               type="submit"
               className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-700 transition-all flex items-center justify-center shadow-lg shadow-emerald-600/20 group"
             >
-              Sign In to Portal
+              {isSignUp ? 'Create My Account' : 'Sign In to Portal'}
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-slate-700 text-center">
-            <p className="text-slate-500 text-xs font-medium">
-              Forgot your password? <a href="#" className="text-emerald-500 hover:text-emerald-400 font-bold">Contact IT Support</a>
-            </p>
-          </div>
+          {!isSignUp && (
+            <div className="mt-8 pt-8 border-t border-slate-700 text-center">
+              <p className="text-slate-500 text-xs font-medium">
+                Forgot your password? <a href="#" className="text-emerald-500 hover:text-emerald-400 font-bold">Contact IT Support</a>
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="mt-8 text-center text-slate-600 text-[10px] font-black uppercase tracking-widest">

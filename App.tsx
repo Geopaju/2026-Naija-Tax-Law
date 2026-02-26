@@ -42,10 +42,12 @@ const App: React.FC = () => {
   }, [userInput, taxConfig]);
 
   const saveToHistory = () => {
+    if (!currentUser) return;
     const newEntry: TaxHistoryEntry = {
       id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
       timestamp: Date.now(),
-      employeeName: userInput.employeeName || 'Unnamed Employee',
+      userEmail: currentUser.email,
+      employeeName: userInput.employeeName || 'Unnamed Individual',
       grossAnnual: currentResult.grossAnnual,
       totalDeductions: currentResult.totalAllowableDeductions,
       annualPAYE: currentResult.annualPAYE,
@@ -70,7 +72,7 @@ const App: React.FC = () => {
     setCurrentUser({ email, role });
     setRole(role);
     if (role === 'admin') setActiveTab('admin');
-    else if (role === 'hr') setActiveTab('bulk');
+    else if (role === 'organisation') setActiveTab('bulk');
     else setActiveTab('calculator');
   };
 
@@ -78,6 +80,11 @@ const App: React.FC = () => {
     setCurrentUser(null);
     setRole(null);
   };
+
+  const userHistory = useMemo(() => {
+    if (!currentUser) return [];
+    return taxHistory.filter(entry => entry.userEmail === currentUser.email);
+  }, [taxHistory, currentUser]);
 
   if (!currentUser) {
     return <Login onLogin={handleLogin} />;
@@ -100,16 +107,16 @@ const App: React.FC = () => {
               <UserCircle className="w-4 h-4 text-slate-500" />
               <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{currentUser.email}</span>
             </div>
-            {role === 'employee' && (
+            {role === 'individual' && (
               <>
                 <NavButton active={activeTab === 'calculator'} onClick={() => setActiveTab('calculator')} icon={<PieChart className="w-4 h-4" />} label="Calculator" />
-                <NavButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={<HistoryIcon className="w-4 h-4" />} label="History" />
+                <NavButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={<HistoryIcon className="w-4 h-4" />} label="Tax History" />
                 <NavButton active={activeTab === 'assistant'} onClick={() => setActiveTab('assistant')} icon={<HelpCircle className="w-4 h-4" />} label="AI Advisor" />
               </>
             )}
-            {role === 'hr' && (
+            {role === 'organisation' && (
               <>
-                <NavButton active={activeTab === 'bulk'} onClick={() => setActiveTab('bulk')} icon={<Users className="w-4 h-4" />} label="Bulk Compute" />
+                <NavButton active={activeTab === 'bulk'} onClick={() => setActiveTab('bulk')} icon={<Users className="w-4 h-4" />} label="Bulk Payroll" />
                 <NavButton active={activeTab === 'calculator'} onClick={() => setActiveTab('calculator')} icon={<PieChart className="w-4 h-4" />} label="Individual Test" />
               </>
             )}
@@ -143,7 +150,7 @@ const App: React.FC = () => {
         {activeTab === 'assistant' && <TaxAssistant results={currentResult} />}
         {activeTab === 'history' && (
           <TaxHistory 
-            history={taxHistory} 
+            history={userHistory} 
             onDelete={deleteHistoryEntry} 
             onView={viewHistoryEntry} 
           />

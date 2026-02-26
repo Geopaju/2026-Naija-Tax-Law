@@ -148,7 +148,7 @@ const HRModule: React.FC<{ config: TaxConfig }> = ({ config }) => {
               <FileSpreadsheet className="w-8 h-8 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-800">HR Payroll Engine</h2>
+              <h2 className="text-2xl font-black text-slate-800">Organisation Payroll Engine</h2>
               <p className="text-sm text-slate-500 font-medium">Bulk compute PAYE for your workforce using 2026 rules.</p>
             </div>
           </div>
@@ -279,7 +279,7 @@ const HRModule: React.FC<{ config: TaxConfig }> = ({ config }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatsCard 
-          label="Est. Organization Tax" 
+          label="Est. Organisation Tax" 
           value={`₦${Math.round(records.reduce((acc, r) => acc + (r.result?.monthlyPAYE || 0), 0)).toLocaleString()}`} 
           color="text-emerald-600" 
           subtitle="Monthly total liability"

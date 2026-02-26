@@ -57,6 +57,7 @@ export interface CalculationResult {
 export interface TaxHistoryEntry {
   id: string;
   timestamp: number;
+  userEmail: string;
   employeeName: string;
   grossAnnual: number;
   totalDeductions: number;
@@ -66,4 +67,4 @@ export interface TaxHistoryEntry {
   result: CalculationResult;
 }
 
-export type UserRole = 'employee' | 'hr' | 'admin';
+export type UserRole = 'individual' | 'organisation' | 'admin';

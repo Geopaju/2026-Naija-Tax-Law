@@ -87,7 +87,7 @@ const EmployeeModule: React.FC<Props> = ({ input, setInput, config, result, onSa
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Employee Profile', 20, 55);
+    doc.text('Individual Profile', 20, 55);
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -236,7 +236,7 @@ const EmployeeModule: React.FC<Props> = ({ input, setInput, config, result, onSa
               </button>
             </div>
           ) : (
-            <SummaryLine label="Employee" value={input.employeeName || 'Unnamed Employee'} onEdit={() => setActiveStep(1)} />
+            <SummaryLine label="Individual" value={input.employeeName || 'Unnamed Individual'} onEdit={() => setActiveStep(1)} />
           )}
         </Card>
 
